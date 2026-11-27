@@ -39,3 +39,15 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Project: Smart Expense Tracker (mobile app)
+- React Native + Expo Router + TypeScript. The backend is the Laravel API in the sibling folder
+  ../smart-expense-tracker; its reference is ../smart-expense-tracker/docs/api.md. Never invent endpoints; read that file.
+- All network calls go through api() in src/api/client.ts. Money values from the API are strings with two decimals
+  ("450.50"): never do floating-point arithmetic on them, and show them with formatMoney() from src/lib/money.ts
+  (NPR, lakh grouping).
+- The auth token is stored only through src/auth/token-storage.ts (expo-secure-store). Never log tokens or passwords.
+- Style with the theme in src/theme (useColors) and the building blocks in src/components/ui.tsx. No hard-coded colours.
+- Configuration comes from EXPO_PUBLIC_* variables in .env.local (git-ignored). Commit only .env.example.
+- Do not install packages without asking. Use "npx expo install <package>" for Expo and React Native packages.
+- Check your work with: npx tsc --noEmit && npm run lint
