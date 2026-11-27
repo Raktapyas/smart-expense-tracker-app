@@ -1,90 +1,65 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { api, ApiError } from '@/api/client';
+import { ApiError } from '@/api/client';
 import { useAuth } from '@/auth/auth-context';
-import { AppText, Button, Card, Screen } from '@/components/ui';
-import { formatMoney } from '@/lib/money';
+import { ScrollScreen } from '@/components/scroll-screen';
+import { AppText, Button, Card } from '@/components/ui';
+import {
+  AccountsCard,
+  BalanceCard,
+  BudgetsCard,
+  CategoryBreakdownCard,
+  InsightsCard,
+  RecentCard,
+  TrendCard,
+} from '@/features/dashboard/widgets';
+import { useDashboard } from '@/features/dashboard/use-dashboard';
 import { useColors } from '@/theme';
 
-type Dashboard = {
-  month_label: string;
-  total_balance: string;
-  income: string;
-  expense: string;
-  saved: string;
-};
-
-// Temporary home screen: proves sign-in, the stored token and the API work together.
-// The real dashboard replaces it in the next step.
 export default function HomeScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const colors = useColors();
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isPending, isRefetching, refetch } = useDashboard();
 
-  const load = useCallback(async () => {
-    setError(null);
-
-    try {
-      const response = await api<{ data: Dashboard }>('/dashboard');
-
-      setDashboard(response.data);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Something went wrong.');
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void load();
-  }, [load]);
-
-  function confirmSignOut() {
-    Alert.alert('Sign out', 'Sign out of this device?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
-    ]);
-  }
+  const firstName = user?.name.split(' ')[0] ?? '';
+  const message = error instanceof ApiError ? error.message : error ? 'Something went wrong.' : null;
 
   return (
-    <Screen scroll>
-      <View style={{ gap: 4 }}>
-        <AppText variant="muted">Signed in as {user?.email}</AppText>
-        <AppText variant="title">Hello, {user?.name}</AppText>
+    <ScrollScreen refreshing={isRefetching} onRefresh={() => void refetch()}>
+      <View style={{ gap: 2 }}>
+        <AppText variant="muted">{data?.month_label ?? ' '}</AppText>
+        <AppText variant="title">Hello, {firstName}</AppText>
       </View>
 
-      {error ? (
-        <Card>
-          <AppText variant="error">{error}</AppText>
-          <Button title="Try again" variant="secondary" onPress={() => void load()} />
-        </Card>
-      ) : dashboard ? (
-        <Card>
-          <AppText variant="muted">Total balance</AppText>
-          <AppText variant="title" style={{ fontVariant: ['tabular-nums'] }}>
-            {formatMoney(dashboard.total_balance)}
-          </AppText>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <View>
-              <AppText variant="small">Income · {dashboard.month_label}</AppText>
-              <AppText style={{ color: colors.income, fontVariant: ['tabular-nums'] }}>
-                {formatMoney(dashboard.income)}
-              </AppText>
-            </View>
-            <View>
-              <AppText variant="small">Spent</AppText>
-              <AppText style={{ color: colors.expense, fontVariant: ['tabular-nums'] }}>
-                {formatMoney(dashboard.expense)}
-              </AppText>
-            </View>
-          </View>
-        </Card>
-      ) : (
-        <AppText variant="muted">Loading your dashboard…</AppText>
-      )}
+      {isPending ? <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} /> : null}
 
-      <Button title="Sign out" variant="secondary" onPress={confirmSignOut} />
-    </Screen>
+      {message ? (
+        <Card>
+          <AppText variant="error">{message}</AppText>
+          <Button title="Try again" variant="secondary" onPress={() => void refetch()} />
+        </Card>
+      ) : null}
+
+      {data ? (
+        <>
+          {data.accounts.length === 0 ? (
+            <Card>
+              <AppText variant="heading">Add your first account</AppText>
+              <AppText variant="muted">
+                Add a cash, bank or wallet account on the website to start tracking. Account management arrives in the
+                app in an upcoming step.
+              </AppText>
+            </Card>
+          ) : null}
+          <BalanceCard data={data} />
+          <InsightsCard insights={data.insights} />
+          <BudgetsCard budgets={data.budgets} overCount={data.over_budget_count} />
+          <CategoryBreakdownCard data={data} />
+          <TrendCard trend={data.trend} />
+          <AccountsCard accounts={data.accounts} />
+          <RecentCard transactions={data.recent} />
+        </>
+      ) : null}
+    </ScrollScreen>
   );
 }

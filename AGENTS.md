@@ -51,3 +51,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - Configuration comes from EXPO_PUBLIC_* variables in .env.local (git-ignored). Commit only .env.example.
 - Do not install packages without asking. Use "npx expo install <package>" for Expo and React Native packages.
 - Check your work with: npx tsc --noEmit && npm run lint
+
+## Server data
+- Fetch and cache server data with TanStack Query (client in src/lib/query.ts, provider in src/app/_layout.tsx).
+  Put each feature's hooks in src/features/<feature>/, with query keys like ['dashboard'].
+- After a change (add, edit or delete a transaction, budget and so on) invalidate the affected keys, at least
+  ['dashboard'], so the home screen refreshes.
+- The query cache is cleared on sign-out. Never keep one user's data after sign-out.
+- Reusable UI lives in src/components (ui.tsx, section-card.tsx, transaction-row.tsx, budget-progress.tsx).
+- For money arithmetic use toCents()/fromCents() from src/lib/money.ts, never floating-point maths on strings.

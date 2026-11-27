@@ -1,16 +1,20 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { AppText, Button, Card, Screen } from '@/components/ui';
+import { queryClient } from '@/lib/query';
 import { useColors } from '@/theme';
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <Gate />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Gate />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

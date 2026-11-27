@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { api, ApiError, setAuthToken, setUnauthorizedHandler } from '@/api/client';
 import type { AuthResponse, User } from '@/api/types';
 import { tokenStorage } from '@/auth/token-storage';
+import { queryClient } from '@/lib/query';
 
 type Status = 'loading' | 'unreachable' | 'signedOut' | 'signedIn';
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(async () => {
     setAuthToken(null);
+    queryClient.clear();
     await tokenStorage.clear();
     setUser(null);
     setStatus('signedOut');

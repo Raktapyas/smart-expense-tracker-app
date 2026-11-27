@@ -13,3 +13,20 @@ export function formatMoney(value: string | number | null | undefined, symbol = 
 
   return `${number < 0 ? '-' : ''}${symbol} ${grouped}.${decimals}`;
 }
+
+/** Converts a money string such as "1250.50" to whole paisa (125050) without floating-point maths. */
+export function toCents(value: string): number {
+  const trimmed = value.trim();
+  const negative = trimmed.startsWith('-');
+  const [integer, decimals = ''] = trimmed.replace('-', '').split('.');
+  const cents = Number(integer || '0') * 100 + Number((decimals + '00').slice(0, 2));
+
+  return negative ? -cents : cents;
+}
+
+/** Converts whole paisa back to a money string, e.g. 125050 -> "1250.50". */
+export function fromCents(cents: number): string {
+  const absolute = Math.abs(cents);
+
+  return `${cents < 0 ? '-' : ''}${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, '0')}`;
+}
